@@ -1,0 +1,13 @@
+{
+  "dependencies": {
+    "puppeteer": "^22.1.0"
+  },
+  "name": "appointments-available-check",
+  "description": "A miniproject to check if a visa site has available appointments.",
+  "version": "1.0.0",
+  "main": "index.js",
+  "devDependencies": {},
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
