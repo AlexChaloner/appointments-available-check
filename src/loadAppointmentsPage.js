@@ -4,7 +4,7 @@ const {username, password} = require('./loginDetails.js');
 module.exports = async function tryWebsite() {
   (async () => {
     // const browser = await puppeteer.launch({headless: 'new'});
-    const browser = await puppeteer.launch({headless: false, slowMo: 50});
+    const browser = await puppeteer.launch({headless: false, slowMo: 10});
     const page = await browser.newPage();
     const timeout = 10000;
     page.setDefaultTimeout(timeout);
