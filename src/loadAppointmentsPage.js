@@ -1,5 +1,9 @@
 const puppeteer = require('puppeteer'); // v20.7.4 or later
-const {username, password} = require('./loginDetails.js');
+
+require('dotenv').config();
+
+const username = process.env.TLS_USERNAME;
+const password = process.env.TLS_PASSWORD;
 
 module.exports = async function tryWebsite() {
   (async () => {
