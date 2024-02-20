@@ -302,6 +302,6 @@ module.exports = async function tryWebsite() {
     }
   })().catch(err => {
       console.error(err);
-      process.exit(1);
+      return true;
   });
 }

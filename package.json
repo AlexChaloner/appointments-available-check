@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "dotenv": "^16.4.5",
+    "nodemailer": "^6.9.9",
     "puppeteer": "^22.1.0"
   },
   "name": "appointments-available-check",
