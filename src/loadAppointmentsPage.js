@@ -38,48 +38,45 @@ module.exports = async function tryWebsite(appointmentEmitter) {
 
   let loginPage = true;
 
+  async function isLoginPage() {
+    console.log("Checking if login page");
+    const targetPage = page;
+    try {
+      await waitForElement({
+        type: 'waitForElement',
+        target: 'main',
+        selectors: [
+            'aria/Log in[role="heading"]',
+            '#form-title',
+            'xpath///*[@id="form-title"]',
+            'pierce/#form-title'
+        ]
+      }, targetPage, timeout);
+      console.log("Found login page D:");
+      return true;
+    } catch (err) {
+      console.log(err);
+      console.log("Did not find login page");
+      return false;
+    }
+  }
+
+  /**
+   * Checks if page is login page. If login page, logins in.
+   */
   async function loginIfNeeded() {
     console.log("Logging in");
     loginPage = await isLoginPage();
-    async function isLoginPage() {
-      const targetPage = page;
-      try {
-        await waitForElement({
-          type: 'waitForElement',
-          target: 'main',
-          selectors: [
-              'aria/Log in[role="heading"]',
-              '#form-title',
-              'xpath///*[@id="form-title"]',
-              'pierce/#form-title'
-          ]
-        }, targetPage, timeout);
-        console.log("Found login page D:");
-        return true;
-      } catch (err) {
-        console.log(err);
-        return false;
-      }
-    }
   
     attempts = 0;
     while (loginPage && attempts < 2) {
+      console.log("Logging in, attempt", attempts)
       await login();
-      await goToAppointmentsPage();
-      {
-        const targetPage = page;
-        const promises = [];
-        const startWaitingForEvents = () => {
-          promises.push(targetPage.waitForNavigation());
-        }
-        startWaitingForEvents();
-        await Promise.all(promises);
-      }
       loginPage = await isLoginPage();
       attempts += 1;
     }
   
-    console.log(loginPage);
+    console.log("Is login page:", loginPage);
   
     async function login() {
       await enterEmail(username);
@@ -88,35 +85,31 @@ module.exports = async function tryWebsite(appointmentEmitter) {
     }
   }
 
-
-  let errorFound = true;
-  let attempts = 0;
-
-  while (errorFound && attempts < 2) {
-    try {
-
-      await loginIfNeeded();
-      errorFound = false;
-    } catch (err) {
-      console.log("Had difficulty logging in or loading appointments page", attempts)
-      console.log(err);
-      errorFound = true;
-      attempts += 1
-    }
+  try {
+    await loginIfNeeded();
+  } catch (err) {
+    console.log("Had difficulty logging in or loading appointments page")
+    console.log(err);
   }
+
+  // loginPage = await isLoginPage();
 
   if (loginPage) {
     console.log("Couldn't log in");
+    await browser.close();
     return;
+  } else {
+    console.log("Logged in!");
   }
 
+  const pollingTime = 300000;
+
   if (!loginPage) {
-    console.log("Setting 5 minute testing");
-    setTimeout(async () => await testAppointmentPage(), 300000);
+    console.log("Setting testing with minutes: ", pollingTime / 60 / 1000);
+    setTimeout(async () => await testAppointmentPage(), pollingTime);
   }
 
   async function testAppointmentPage() {
-
     try {
       await goToAppointmentsPage();
     } catch (err) {
@@ -136,14 +129,17 @@ module.exports = async function tryWebsite(appointmentEmitter) {
         ],
         visible: true
       }, targetPage, timeout);
+      console.log("Appointment not found.")
     } catch (err) {
       console.log(err);
       console.log("May be success!");
       appointmentEmitter.emit('appointmentFound', true);
     }
+    console.log("Setting 5 minute testing");
+    setTimeout(async () => await testAppointmentPage(), pollingTime);
   }
 
-  await browser.close();
+  // await browser.close();
 
   async function enterEmail(username) {
     {
