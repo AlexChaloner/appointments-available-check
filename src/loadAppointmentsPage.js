@@ -6,11 +6,11 @@ require('dotenv').config();
 const username = process.env.TLS_USERNAME;
 const password = process.env.TLS_PASSWORD;
 
-module.exports = async function tryWebsite() {
+module.exports = async function tryWebsite(appointmentEmitter) {
   // const browser = await puppeteer.launch({headless: 'new'});
   const browser = await puppeteer.launch({headless: false, slowMo: 10});
   const page = await browser.newPage();
-  const timeout = 10000;
+  const timeout = 20000;
   page.setDefaultTimeout(timeout);
 
   {
@@ -22,92 +22,128 @@ module.exports = async function tryWebsite() {
   }
 
   async function goToAppointmentsPage() {
+    
       const targetPage = page;
       const promises = [];
       const startWaitingForEvents = () => {
           promises.push(targetPage.waitForNavigation());
       }
       startWaitingForEvents();
+      console.log("Going to appointments page");
       await targetPage.goto('https://visas-de.tlscontact.com/appointment/gb/gbLON2de/2273157');
       await Promise.all(promises);
   }
 
   await goToAppointmentsPage();
 
-  let loginPage = await isLoginPage();
-  async function isLoginPage() {
-    const targetPage = page;
-    try {
-      await waitForElement({
-        type: 'waitForElement',
-        target: 'main',
-        selectors: [
-            'aria/Log in[role="heading"]',
-            '#form-title',
-            'xpath///*[@id="form-title"]',
-            'pierce/#form-title'
-        ]
-      }, targetPage, timeout);
-      console.log("Found login page D:");
-      return true;
-    } catch (err) {
-      console.log(err);
-      return false;
-    }
-  }
+  let loginPage = true;
 
-  attempts = 0;
-  while (loginPage && attempts < 2) {
-    await login();
-    await goToAppointmentsPage();
-    {
-      const targetPage = page;
-      const promises = [];
-      const startWaitingForEvents = () => {
-        promises.push(targetPage.waitForNavigation());
-      }
-      startWaitingForEvents();
-      await Promise.all(promises);
-    }
+  async function loginIfNeeded() {
+    console.log("Logging in");
     loginPage = await isLoginPage();
-    attempts += 1;
-  }
-
-  console.log(loginPage);
-
-  async function login() {
-    await enterEmail(username);
-    await enterPassword(password);
-    await pressLogIn();
-  }
-
-  let appointmentErrorMessage = true;
-
-  if (!loginPage) {
+    async function isLoginPage() {
       const targetPage = page;
       try {
         await waitForElement({
           type: 'waitForElement',
           target: 'main',
           selectors: [
-              'div.tls-popup-display--container > div > div div:nth-of-type(2) > div:nth-of-type(1) > div',
-              'xpath///*[@id="app"]/div[4]/div[3]/div[2]/div/div/div[2]/div[2]/div[1]/div',
-              'pierce/div.tls-popup-display--container > div > div div:nth-of-type(2) > div:nth-of-type(1) > div'
-          ],
-          visible: true
+              'aria/Log in[role="heading"]',
+              '#form-title',
+              'xpath///*[@id="form-title"]',
+              'pierce/#form-title'
+          ]
         }, targetPage, timeout);
+        console.log("Found login page D:");
+        return true;
       } catch (err) {
         console.log(err);
-        console.log("May be success!!");
-        appointmentErrorMessage = false;
+        return false;
       }
-  } else {
-    console.log("Couldn't login :/")
+    }
+  
+    attempts = 0;
+    while (loginPage && attempts < 2) {
+      await login();
+      await goToAppointmentsPage();
+      {
+        const targetPage = page;
+        const promises = [];
+        const startWaitingForEvents = () => {
+          promises.push(targetPage.waitForNavigation());
+        }
+        startWaitingForEvents();
+        await Promise.all(promises);
+      }
+      loginPage = await isLoginPage();
+      attempts += 1;
+    }
+  
+    console.log(loginPage);
+  
+    async function login() {
+      await enterEmail(username);
+      await enterPassword(password);
+      await pressLogIn();
+    }
+  }
+
+
+  let errorFound = true;
+  let attempts = 0;
+
+  while (errorFound && attempts < 2) {
+    try {
+
+      await loginIfNeeded();
+      errorFound = false;
+    } catch (err) {
+      console.log("Had difficulty logging in or loading appointments page", attempts)
+      console.log(err);
+      errorFound = true;
+      attempts += 1
+    }
+  }
+
+  if (loginPage) {
+    console.log("Couldn't log in");
+    return;
+  }
+
+  if (!loginPage) {
+    console.log("Setting 5 minute testing");
+    setTimeout(async () => await testAppointmentPage(), 300000);
+  }
+
+  async function testAppointmentPage() {
+
+    try {
+      await goToAppointmentsPage();
+    } catch (err) {
+      console.log("Error loading appointments page?")
+      console.log(err);
+      await loginIfNeeded();
+    }
+    const targetPage = page;
+    try {
+      await waitForElement({
+        type: 'waitForElement',
+        target: 'main',
+        selectors: [
+            'div.tls-popup-display--container > div > div div:nth-of-type(2) > div:nth-of-type(1) > div',
+            'xpath///*[@id="app"]/div[4]/div[3]/div[2]/div/div/div[2]/div[2]/div[1]/div',
+            'pierce/div.tls-popup-display--container > div > div div:nth-of-type(2) > div:nth-of-type(1) > div'
+        ],
+        visible: true
+      }, targetPage, timeout);
+    } catch (err) {
+      console.log(err);
+      console.log("May be success!");
+      appointmentEmitter.emit('appointmentFound', true);
+    }
   }
 
   await browser.close();
-
-  return appointmentErrorMessage;
 
   async function enterEmail(username) {
     {
@@ -119,12 +155,6 @@ module.exports = async function tryWebsite() {
           targetPage.locator(':scope >>> #username')
       ])
           .setTimeout(timeout)
-          // .click({
-          //   offset: {
-          //     x: 166.53125,
-          //     y: 24.390625,
-          //   },
-          // })
           .fill(username);
     }
   }
@@ -139,16 +169,9 @@ module.exports = async function tryWebsite() {
           targetPage.locator(':scope >>> #password')
       ])
           .setTimeout(timeout)
-          // .click({
-          //   offset: {
-          //     x: 139.53125,
-          //     y: 20.421875,
-          //   },
-          // })
           .fill(password);
     }    
   }
-
 
   async function pressLogIn() {
     {
