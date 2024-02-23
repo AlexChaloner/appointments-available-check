@@ -10,7 +10,7 @@ module.exports = async function tryWebsite(appointmentEmitter) {
   // const browser = await puppeteer.launch({headless: 'new'});
   const browser = await puppeteer.launch({headless: false, slowMo: 10});
   const page = await browser.newPage();
-  const timeout = 20000;
+  const timeout = 30000;
   page.setDefaultTimeout(timeout);
 
   {
@@ -22,7 +22,6 @@ module.exports = async function tryWebsite(appointmentEmitter) {
   }
 
   async function goToAppointmentsPage() {
-    
       const targetPage = page;
       const promises = [];
       const startWaitingForEvents = () => {
@@ -30,6 +29,7 @@ module.exports = async function tryWebsite(appointmentEmitter) {
       }
       startWaitingForEvents();
       console.log("Going to appointments page");
+      // await targetPage.goto('https://visas-de.tlscontact.com/appointment/gb/gbLON2de/2279305');
       await targetPage.goto('https://visas-de.tlscontact.com/appointment/gb/gbLON2de/2273157');
       await Promise.all(promises);
   }
@@ -92,8 +92,6 @@ module.exports = async function tryWebsite(appointmentEmitter) {
     console.log(err);
   }
 
-  // loginPage = await isLoginPage();
-
   if (loginPage) {
     console.log("Couldn't log in");
     await browser.close();
@@ -102,10 +100,10 @@ module.exports = async function tryWebsite(appointmentEmitter) {
     console.log("Logged in!");
   }
 
-  const pollingTime = 300000;
+  const pollingTime = 120000;
 
   if (!loginPage) {
-    console.log("Setting testing with minutes: ", pollingTime / 60 / 1000);
+    console.log("Setting testing with minutes:", pollingTime / 60 / 1000);
     setTimeout(async () => await testAppointmentPage(), pollingTime);
   }
 
@@ -129,13 +127,14 @@ module.exports = async function tryWebsite(appointmentEmitter) {
         ],
         visible: true
       }, targetPage, timeout);
-      console.log("Appointment not found.")
+      console.log((new Date()).toLocaleString('en-GB'), "Appointment not found.")
+      appointmentEmitter.emit('appointmentFound', false);
     } catch (err) {
       console.log(err);
-      console.log("May be success!");
+      console.log((new Date()).toLocaleString('en-GB'), "May be success!");
       appointmentEmitter.emit('appointmentFound', true);
     }
-    console.log("Setting 5 minute testing");
+    console.log((new Date()).toLocaleString('en-GB'), "Setting 5 minute testing");
     setTimeout(async () => await testAppointmentPage(), pollingTime);
   }
 

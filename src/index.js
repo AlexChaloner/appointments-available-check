@@ -6,11 +6,20 @@ const EventEmitter = require('events');
 class AppointmentEmitter extends EventEmitter {}
 const appointmentEmitter = new AppointmentEmitter();
 
+// To prevent spamming
+receivedEmailToggle = false
+
 // Listen for the event
 appointmentEmitter.on('appointmentFound', (data) => {
   console.log(`Received data: ${data}`);
   if (data === true) {
-    sendEmail();
+    
+    if (!receivedEmailToggle) {
+        receivedEmailToggle = true
+        sendEmail();
+    }
+  } else {
+    receivedEmailToggle = false
   }
 });
 
@@ -18,8 +27,7 @@ async function poll() {
     await tryWebsite(appointmentEmitter);
 }
 
-function sendEmail() {
-
+function sendEmail(repeats=0) {
     const email_username = process.env.SENDER_EMAIL_USERNAME;
     const email_password = process.env.SENDER_EMAIL_PASSWORD;
 
@@ -45,23 +53,24 @@ function sendEmail() {
     
     console.log(receivers);
     
-    for (let receiver of receivers) {
-        console.log(receiver);
-        let mailOptions = {
-            from: email_username,
-            to: receiver,
-            subject: 'Possible appointment available',
-            text: 'That was easy!'
-        };
-            
-        transporter.sendMail(mailOptions, function(error, info) {
-            if (error) {
-                console.log(error);
-            } else {
-                console.log('Email sent: ' + info.response);
+    let mailOptions = {
+        from: email_username,
+        to: receivers,
+        subject: 'Possible appointment available',
+        text: 'That was easy!'
+    };
+        
+    transporter.sendMail(mailOptions, function(error, info) {
+        if (error) {
+            console.log("Email was not sent");
+            console.log(error);
+            if (repeats < 10) {
+                sendEmail(repeats + 1);
             }
-        });
-    }
+        } else {
+            console.log('Email sent: ' + info.response);
+        }
+    });
 }
 
 poll();
