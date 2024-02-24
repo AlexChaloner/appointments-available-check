@@ -117,15 +117,16 @@ module.exports = async function tryWebsite(appointmentEmitter) {
       await loginIfNeeded();
     }
     const targetPage = page;
-    const noAppointmentsMessage = await checkForNoAppointmentsMessage();
-    if (noAppointmentsMessage) {
-      console.log((new Date()).toLocaleString('en-GB'), "May be success!");
-      await targetPage.screenshot({ path: `./screenshots/possible-success-${new Date()}.jpg` });
+    const appointmentsMessage = await checkForAppointmentsMessage();
+    if (!appointmentsMessage) {
+      const dateString = getFormattedDateForFilename();
+      console.log(dateString, "May be success!");
+      await targetPage.screenshot({ path: `./screenshots/possible-success-${dateString}.jpg` });
       const timeSlotsPresent = await checkForTimesSlotsPresent();
       if (timeSlotsPresent) {
         // Capture screenshot and save it in the screenshots folder
-        console.log((new Date()).toLocaleString('en-GB'), "Deemed to be success!");
-        await targetPage.screenshot({ path: `./screenshots/success-${new Date()}.jpg` });
+        console.log(dateString, "Deemed to be success!");
+        await targetPage.screenshot({ path: `./screenshots/success-${dateString}.jpg` });
         appointmentEmitter.emit('appointmentFound', true);
       } else {
         sendAppointmentNotFound();
@@ -143,7 +144,7 @@ module.exports = async function tryWebsite(appointmentEmitter) {
     setTimeout(async () => await testAppointmentPage(), pollingTime);
   }
 
-  async function checkForNoAppointmentsMessage() {
+  async function checkForAppointmentsMessage() {
     try {
       const targetPage = page;
       waitForElement({
@@ -243,5 +244,18 @@ module.exports = async function tryWebsite(appointmentEmitter) {
           });
       await Promise.all(promises);
     }
+  }
+
+  function getFormattedDateForFilename() {
+    const date = new Date();
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0'); // Convert to 2 digits
+    const day = date.getDate().toString().padStart(2, '0'); // Convert to 2 digits
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    const seconds = date.getSeconds().toString().padStart(2, '0');
+  
+    // Create a date string for filename: "YYYY-MM-DD_HH-MM-SS"
+    return `${year}-${month}-${day}_${hours}-${minutes}-${seconds}`;
   }
 }
