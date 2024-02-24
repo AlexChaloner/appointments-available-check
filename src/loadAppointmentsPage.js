@@ -117,29 +117,65 @@ module.exports = async function tryWebsite(appointmentEmitter) {
       await loginIfNeeded();
     }
     const targetPage = page;
-    try {
-      await checkForTimesSlotsPresent();
+    const noAppointmentsMessage = await checkForNoAppointmentsMessage();
+    if (noAppointmentsMessage) {
       console.log((new Date()).toLocaleString('en-GB'), "May be success!");
-      // Capture screenshot and save it in the screenshots folder
-      await targetPage.screenshot({ path: `./screenshots/success-${new Date()}.jpg` });
-      appointmentEmitter.emit('appointmentFound', true);
-    } catch (err) {
+      await targetPage.screenshot({ path: `./screenshots/possible-success-${new Date()}.jpg` });
+      const timeSlotsPresent = await checkForTimesSlotsPresent();
+      if (timeSlotsPresent) {
+        // Capture screenshot and save it in the screenshots folder
+        console.log((new Date()).toLocaleString('en-GB'), "Deemed to be success!");
+        await targetPage.screenshot({ path: `./screenshots/success-${new Date()}.jpg` });
+        appointmentEmitter.emit('appointmentFound', true);
+      } else {
+        sendAppointmentNotFound();
+      }
+    } else {
+      sendAppointmentNotFound();
+    }
+    
+    function sendAppointmentNotFound() {
       console.log((new Date()).toLocaleString('en-GB'), "Appointment not found.");
       appointmentEmitter.emit('appointmentFound', false);
     }
+
     console.log(new Date(), `Setting ${pollingMinutes} minute testing`);
     setTimeout(async () => await testAppointmentPage(), pollingTime);
   }
 
-  async function checkForTimesSlotsPresent() {
-    const targetPage = page;
-    await waitForElement({
+  async function checkForNoAppointmentsMessage() {
+    try {
+      const targetPage = page;
+      waitForElement({
         type: 'waitForElement',
         target: 'main',
         selectors: [
-          'button.tls-time-unit'
-        ]
-    }, targetPage, timeout);
+            'div.tls-popup-display--container > div > div div:nth-of-type(2) > div:nth-of-type(1) > div',
+            'xpath///*[@id="app"]/div[4]/div[3]/div[2]/div/div/div[2]/div[2]/div[1]/div',
+            'pierce/div.tls-popup-display--container > div > div div:nth-of-type(2) > div:nth-of-type(1) > div'
+        ],
+        visible: true
+      }, targetPage, timeout);
+      return true;
+    } catch (err) {
+      return false;
+    }
+  }
+
+  async function checkForTimesSlotsPresent() {
+    try {
+      const targetPage = page;
+      await waitForElement({
+          type: 'waitForElement',
+          target: 'main',
+          selectors: [
+            'button.tls-time-unit'
+          ]
+      }, targetPage, 5000);
+      return true;
+    } catch (err) {
+      return false;
+    }
   }
 
   // TODO - Requires a little more work to check through multiple pages
