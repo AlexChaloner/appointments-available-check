@@ -100,11 +100,12 @@ module.exports = async function tryWebsite(appointmentEmitter) {
     console.log("Logged in!");
   }
 
-  const pollingTime = 120000;
+  const pollingTime = 120000; // Milliseconds
+  const pollingMinutes = pollingTime / 60 / 1000;
 
   if (!loginPage) {
-    console.log("Setting testing with minutes:", pollingTime / 60 / 1000);
-    setTimeout(async () => await testAppointmentPage(), pollingTime);
+    console.log("Setting testing with minutes:", pollingMinutes);
+    await testAppointmentPage();
   }
 
   async function testAppointmentPage() {
@@ -117,27 +118,40 @@ module.exports = async function tryWebsite(appointmentEmitter) {
     }
     const targetPage = page;
     try {
-      await waitForElement({
+      await checkForTimesSlotsPresent();
+      console.log((new Date()).toLocaleString('en-GB'), "May be success!");
+      // Capture screenshot and save it in the screenshots folder
+      await targetPage.screenshot({ path: `./screenshots/success-${new Date()}.jpg` });
+      appointmentEmitter.emit('appointmentFound', true);
+    } catch (err) {
+      console.log((new Date()).toLocaleString('en-GB'), "Appointment not found.");
+      appointmentEmitter.emit('appointmentFound', false);
+    }
+    console.log(new Date(), `Setting ${pollingMinutes} minute testing`);
+    setTimeout(async () => await testAppointmentPage(), pollingTime);
+  }
+
+  async function checkForTimesSlotsPresent() {
+    const targetPage = page;
+    await waitForElement({
         type: 'waitForElement',
         target: 'main',
         selectors: [
-            'div.tls-popup-display--container > div > div div:nth-of-type(2) > div:nth-of-type(1) > div',
-            'xpath///*[@id="app"]/div[4]/div[3]/div[2]/div/div/div[2]/div[2]/div[1]/div',
-            'pierce/div.tls-popup-display--container > div > div div:nth-of-type(2) > div:nth-of-type(1) > div'
-        ],
-        visible: true
-      }, targetPage, timeout);
-      console.log((new Date()).toLocaleString('en-GB'), "Appointment not found.")
-      appointmentEmitter.emit('appointmentFound', false);
-    } catch (err) {
-      console.log(err);
-      console.log((new Date()).toLocaleString('en-GB'), "May be success!");
-      // Capture screenshot and save it in the screenshots folder:
-      await targetPage.screenshot({ path: `./screenshots/success-${Date.now()}.jpg` });
-      appointmentEmitter.emit('appointmentFound', true);
-    }
-    console.log((new Date()).toLocaleString('en-GB'), "Setting 5 minute testing");
-    setTimeout(async () => await testAppointmentPage(), pollingTime);
+          'button.tls-time-unit'
+        ]
+    }, targetPage, timeout);
+  }
+
+  // TODO - Requires a little more work to check through multiple pages
+  async function checkForTimesSlotsAvailableOnCurrentPage() {
+    const targetPage = page;
+    await waitForElement({
+        type: 'waitForElement',
+        target: 'main',
+        selectors: [
+          'button.tls-time-unit.-available'
+        ]
+    }, targetPage, timeout);
   }
 
   // await browser.close();

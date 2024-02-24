@@ -22,8 +22,8 @@ Run `node src/index.js`.
 - [x] Add loop to allow checks ongoing forever (21/02/2024)
 - [x] Prevent email spamming by adding a toggle (23/02/2024)
 - [x] Add To-Do List (24/02/2024)
-- [x] Take screenshot when bot thinks a success has occurred (help catch false positives)
-- [ ] Add more rigorous check for available dates (In Progress)
+- [x] Take screenshot when bot thinks a success has occurred (help catch false positives) (24/02/2024)
+- [x] Add more rigorous check for if appointments available (24/02/2024)
 - [ ] Allow cycling of multiple Group appointment pages, which may allow quicker polling
 - [ ] Add checking appointments for visas-be site from UK London.
 - [ ] Add instructions in README for Antivirus mail shield self-signed certificate, and refactor for cases where not needed.
