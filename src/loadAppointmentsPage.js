@@ -29,8 +29,8 @@ module.exports = async function tryWebsite(appointmentEmitter) {
       }
       startWaitingForEvents();
       console.log("Going to appointments page");
-      // await targetPage.goto('https://visas-de.tlscontact.com/appointment/gb/gbLON2de/2279305');
-      await targetPage.goto('https://visas-de.tlscontact.com/appointment/gb/gbLON2de/2273157');
+      await targetPage.goto('https://visas-de.tlscontact.com/appointment/gb/gbLON2de/2279305');
+      // await targetPage.goto('https://visas-de.tlscontact.com/appointment/gb/gbLON2de/2273157');
       await Promise.all(promises);
   }
 
@@ -132,6 +132,8 @@ module.exports = async function tryWebsite(appointmentEmitter) {
     } catch (err) {
       console.log(err);
       console.log((new Date()).toLocaleString('en-GB'), "May be success!");
+      // Capture screenshot and save it in the screenshots folder:
+      await targetPage.screenshot({ path: `./screenshots/success-${Date.now()}.jpg` });
       appointmentEmitter.emit('appointmentFound', true);
     }
     console.log((new Date()).toLocaleString('en-GB'), "Setting 5 minute testing");
