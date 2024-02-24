@@ -13,7 +13,6 @@ receivedEmailToggle = false
 appointmentEmitter.on('appointmentFound', (data) => {
   console.log(`Received data: ${data}`);
   if (data === true) {
-    
     if (!receivedEmailToggle) {
         receivedEmailToggle = true
         sendEmail();
@@ -22,10 +21,6 @@ appointmentEmitter.on('appointmentFound', (data) => {
     receivedEmailToggle = false
   }
 });
-
-async function poll() {
-    await tryWebsite(appointmentEmitter);
-}
 
 function sendEmail(repeats=0) {
     const email_username = process.env.SENDER_EMAIL_USERNAME;
@@ -57,7 +52,7 @@ function sendEmail(repeats=0) {
         from: email_username,
         to: receivers,
         subject: 'Possible appointment available',
-        text: 'That was easy!'
+        text: 'Not guaranteed.'
     };
         
     transporter.sendMail(mailOptions, function(error, info) {
@@ -73,4 +68,4 @@ function sendEmail(repeats=0) {
     });
 }
 
-poll();
+tryWebsite(appointmentEmitter);
