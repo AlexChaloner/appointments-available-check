@@ -10,7 +10,7 @@ module.exports = async function tryWebsite(appointmentEmitter) {
   // const browser = await puppeteer.launch({headless: 'new'});
   const browser = await puppeteer.launch({headless: false, slowMo: 10});
   const page = await browser.newPage();
-  const timeout = 30000;
+  const timeout = 20000;
   page.setDefaultTimeout(timeout);
 
   {
@@ -21,20 +21,25 @@ module.exports = async function tryWebsite(appointmentEmitter) {
     })
   }
 
-  async function goToAppointmentsPage() {
+  const appointmentUrls = [
+    'https://visas-de.tlscontact.com/appointment/gb/gbLON2de/2279305',
+    'https://visas-de.tlscontact.com/appointment/gb/gbLON2de/2273157'
+  ]
+  const appointmentUrlLength = appointmentUrls.length;
+
+  async function goToAppointmentsPage(appointmentUrl) {
       const targetPage = page;
       const promises = [];
       const startWaitingForEvents = () => {
           promises.push(targetPage.waitForNavigation());
       }
       startWaitingForEvents();
-      console.log("Going to appointments page");
-      await targetPage.goto('https://visas-de.tlscontact.com/appointment/gb/gbLON2de/2279305');
-      // await targetPage.goto('https://visas-de.tlscontact.com/appointment/gb/gbLON2de/2273157');
+      console.log(`Going to appointments page ${appointmentUrl}`);
+      await targetPage.goto(appointmentUrl);
       await Promise.all(promises);
   }
 
-  await goToAppointmentsPage();
+  await goToAppointmentsPage(appointmentUrls[0]);
 
   let loginPage = true;
 
@@ -100,7 +105,7 @@ module.exports = async function tryWebsite(appointmentEmitter) {
     console.log("Logged in!");
   }
 
-  const pollingTime = 120000; // Milliseconds
+  const pollingTime = 60000; // Milliseconds
   const pollingMinutes = pollingTime / 60 / 1000;
 
   if (!loginPage) {
@@ -108,9 +113,10 @@ module.exports = async function tryWebsite(appointmentEmitter) {
     await testAppointmentPage();
   }
 
-  async function testAppointmentPage() {
+  async function testAppointmentPage(cycle=0) {
+    const appointmentUrl = appointmentUrls[cycle];
     try {
-      await goToAppointmentsPage();
+      await goToAppointmentsPage(appointmentUrl);
     } catch (err) {
       console.log("Error loading appointments page?")
       console.log(err);
@@ -141,7 +147,7 @@ module.exports = async function tryWebsite(appointmentEmitter) {
     }
 
     console.log(new Date(), `Setting ${pollingMinutes} minute testing`);
-    setTimeout(async () => await testAppointmentPage(), pollingTime);
+    setTimeout(async () => await testAppointmentPage((cycle + 1) % appointmentUrls.length), pollingTime);
   }
 
   async function checkForAppointmentsMessage() {

@@ -24,7 +24,7 @@ Run `node src/index.js`.
 - [x] Add To-Do List (24/02/2024)
 - [x] Take screenshot when bot thinks a success has occurred (help catch false positives) (24/02/2024)
 - [x] Add more rigorous check for if appointments available (24/02/2024)
-- [ ] Allow cycling of multiple Group appointment pages, which may allow quicker polling
+- [x] Allow cycling of multiple Group appointment pages, which may allow quicker polling
 - [ ] Add unit tests for basic scenarios - no appointments message, some appointments
 - [ ] Add checking appointments for visas-be site from UK London.
 - [ ] Add instructions in README for Antivirus mail shield self-signed certificate, and refactor for cases where not needed.
