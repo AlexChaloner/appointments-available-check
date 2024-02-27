@@ -6,7 +6,7 @@ require('dotenv').config();
 const username = process.env.TLS_USERNAME;
 const password = process.env.TLS_PASSWORD;
 
-module.exports = async function tryWebsite(appointmentEmitter) {
+module.exports = async function tryWebsite(appointmentEmitter, countryCode, groupNumbers) {
   // const browser = await puppeteer.launch({headless: 'new'});
   const browser = await puppeteer.launch({headless: false, slowMo: 10});
   const page = await browser.newPage();
@@ -21,10 +21,14 @@ module.exports = async function tryWebsite(appointmentEmitter) {
     })
   }
 
-  const appointmentUrls = [
-    'https://visas-de.tlscontact.com/appointment/gb/gbLON2de/2279305',
-    'https://visas-de.tlscontact.com/appointment/gb/gbLON2de/2273157'
-  ]
+  const appointmentUrls = groupNumbers.map((groupNumber) => {
+    return `https://visas-${countryCode}.tlscontact.com/appointment/gb/gbLON2${countryCode}/${groupNumber}`;
+  })
+
+  // const appointmentUrls = [
+  //   'https://visas-de.tlscontact.com/appointment/gb/gbLON2de/2279305',
+  //   'https://visas-de.tlscontact.com/appointment/gb/gbLON2de/2273157'
+  // ]
   const appointmentUrlLength = appointmentUrls.length;
 
   async function goToAppointmentsPage(appointmentUrl) {
@@ -105,7 +109,7 @@ module.exports = async function tryWebsite(appointmentEmitter) {
     console.log("Logged in!");
   }
 
-  const pollingTime = 60000; // Milliseconds
+  const pollingTime = 90000; // Milliseconds
   const pollingMinutes = pollingTime / 60 / 1000;
 
   if (!loginPage) {
@@ -120,7 +124,13 @@ module.exports = async function tryWebsite(appointmentEmitter) {
     } catch (err) {
       console.log("Error loading appointments page?")
       console.log(err);
-      await loginIfNeeded();
+      await targetPage.screenshot({ path: `./screenshots/failure-loading-${dateString}.jpg` });
+      try {
+        await loginIfNeeded();
+      } catch (err) {
+        console.log("Error logging in after failure");
+        console.log(err);
+      }
     }
     const targetPage = page;
     const appointmentsMessage = await checkForAppointmentsMessage();
@@ -153,7 +163,7 @@ module.exports = async function tryWebsite(appointmentEmitter) {
   async function checkForAppointmentsMessage() {
     try {
       const targetPage = page;
-      waitForElement({
+      await waitForElement({
         type: 'waitForElement',
         target: 'main',
         selectors: [

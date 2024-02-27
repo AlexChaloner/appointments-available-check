@@ -68,4 +68,5 @@ function sendEmail(repeats=0) {
     });
 }
 
-tryWebsite(appointmentEmitter);
+tryWebsite(appointmentEmitter, 'de', ['2279305', '2273157']);
+// tryWebsite(appointmentEmitter, 'be', ['1013950']);
