@@ -12,7 +12,6 @@ Copy `example.env` and rename it to `.env`. Enter your username and password.
 
 Run `node src/index.js`.
 
-
 ## To-Do List
 
 - [x] Add Puppeteer code for checking appointments in visas-de TLS from UK London (19/02/2024)

@@ -2,7 +2,7 @@
   "dependencies": {
     "dotenv": "^16.4.5",
     "nodemailer": "^6.9.9",
-    "puppeteer": "^22.1.0"
+    "puppeteer": "^22.13.0"
   },
   "name": "appointments-available-check",
   "description": "A miniproject to check if a visa site has available appointments.",

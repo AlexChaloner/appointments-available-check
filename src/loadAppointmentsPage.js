@@ -10,6 +10,8 @@ module.exports = async function tryWebsite(appointmentEmitter, countryCode, grou
   // const browser = await puppeteer.launch({headless: 'new'});
   const browser = await puppeteer.launch({headless: false, slowMo: 10});
   const page = await browser.newPage();
+  const pollingTime = 600_000; // Milliseconds
+  const pollingMinutes = pollingTime / 60 / 1000;
   const timeout = 20000;
   page.setDefaultTimeout(timeout);
 
@@ -25,10 +27,6 @@ module.exports = async function tryWebsite(appointmentEmitter, countryCode, grou
     return `https://visas-${countryCode}.tlscontact.com/appointment/gb/gbLON2${countryCode}/${groupNumber}`;
   })
 
-  // const appointmentUrls = [
-  //   'https://visas-de.tlscontact.com/appointment/gb/gbLON2de/2279305',
-  //   'https://visas-de.tlscontact.com/appointment/gb/gbLON2de/2273157'
-  // ]
   const appointmentUrlLength = appointmentUrls.length;
 
   async function goToAppointmentsPage(appointmentUrl) {
@@ -74,7 +72,7 @@ module.exports = async function tryWebsite(appointmentEmitter, countryCode, grou
    * Checks if page is login page. If login page, logins in.
    */
   async function loginIfNeeded() {
-    console.log("Logging in");
+    console.log("Logging in if needed");
     loginPage = await isLoginPage();
   
     attempts = 0;
@@ -109,8 +107,7 @@ module.exports = async function tryWebsite(appointmentEmitter, countryCode, grou
     console.log("Logged in!");
   }
 
-  const pollingTime = 90000; // Milliseconds
-  const pollingMinutes = pollingTime / 60 / 1000;
+
 
   if (!loginPage) {
     console.log("Setting testing with minutes:", pollingMinutes);
@@ -146,6 +143,7 @@ module.exports = async function tryWebsite(appointmentEmitter, countryCode, grou
         appointmentEmitter.emit('appointmentFound', true);
       } else {
         sendAppointmentNotFound();
+        await loginIfNeeded();
       }
     } else {
       sendAppointmentNotFound();
